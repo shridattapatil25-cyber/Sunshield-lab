@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SunShield Lab — Indian Sunscreen Chemistry Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --sun: #F4A020;
+  --amber: #E07B00;
+  --cream: #FFF8EE;
+  --dark: #1A1208;
+  --mid: #3D2B00;
+  --text: #2C1A00;
+  --muted: #8B6A3E;
+  --safe: #2D7A4F;
+  --safe-bg: #E8F5EE;
+  --warn: #C0392B;
+  --warn-bg: #FDEAEA;
+  --neutral: #5B6A7A;
+  --neutral-bg: #EEF2F7;
+  --border: rgba(244,160,32,0.2);
+  --card-bg: #FFFCF5;
+  --shadow: 0 4px 24px rgba(26,18,8,0.08);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--text); overflow-x:hidden; }
+
+/* ─── NAV ─── */
+nav {
+  position:fixed; top:0; left:0; right:0; z-index:1000;
+  background:rgba(26,18,8,0.97); backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(244,160,32,0.25);
+  padding:0 1.5rem; display:flex; align-items:center; justify-content:space-between; height:60px;
+}
+.nav-logo { font-family:'Playfair Display',serif; color:var(--sun); font-size:1.25rem; font-weight:700; white-space:nowrap; flex-shrink:0; }
+.nav-logo span { color:#fff; }
+
+/* desktop nav items with dropdowns */
+.nav-links { display:flex; gap:0; align-items:center; height:100%; }
+.nav-item { position:relative; height:100%; display:flex; align-items:center; }
+.nav-item > a {
+  color:rgba(255,255,255,0.62); text-decoration:none; font-size:0.8rem; font-weight:500;
+  padding:0.35rem 0.65rem; border-radius:6px; transition:all 0.18s;
+  display:flex; align-items:center; gap:5px; white-space:nowrap; cursor:pointer;
+}
+.nav-item > a:hover, .nav-item:hover > a { color:var(--sun); background:rgba(244,160,32,0.1); }
+.nav-item > a .chev {
+  width:10px; height:10px; opacity:0.45; transition:transform 0.2s, opacity 0.2s; flex-shrink:0;
+}
+.nav-item:hover > a .chev { transform:rotate(180deg); opacity:1; }
+
+/* dropdown panel */
+.dropdown {
+  position:absolute; top:calc(100% + 2px); left:50%;
+  transform:translateX(-50%) translateY(-8px);
+  background:rgba(12,7,2,0.98); border:1px solid rgba(244,160,32,0.22);
+  border-radius:12px; padding:0.55rem; min-width:220px;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.18s, transform 0.18s;
+  box-shadow:0 20px 48px rgba(0,0,0,0.5);
+}
+.nav-item:hover .dropdown { opacity:1; pointer-events:all; transform:translateX(-50%) translateY(0); }
+.dropdown.align-right { left:auto; right:0; transform:translateY(-8px); }
+.nav-item:hover .dropdown.align-right { transform:translateY(0); }
+
+.drop-header {
+  font-size:0.62rem; letter-spacing:2px; text-transform:uppercase;
+  color:rgba(244,160,32,0.48); padding:0.28rem 0.6rem 0.38rem;
+  font-family:'DM Mono',monospace;
+}
+.drop-link {
+  display:flex; align-items:flex-start; gap:0.6rem; padding:0.46rem 0.6rem;
+  border-radius:8px; text-decoration:none; transition:background 0.14s; cursor:pointer;
+}
+.drop-link:hover { background:rgba(244,160,32,0.08); }
+.drop-icon { font-size:0.95rem; line-height:1; flex-shrink:0; margin-top:2px; }
+.drop-title { display:block; color:rgba(255,255,255,0.82); font-size:0.78rem; font-weight:500; line-height:1.25; }
+.drop-sub { display:block; color:rgba(255,255,255,0.32); font-size:0.69rem; margin-top:2px; line-height:1.3; }
+.drop-divider { height:1px; background:rgba(244,160,32,0.1); margin:0.38rem 0.3rem; }
+
+/* hamburger */
+.nav-burger {
+  display:none; flex-direction:column; justify-content:center; gap:5px;
+  width:36px; height:36px; cursor:pointer; background:none; border:none; padding:4px; flex-shrink:0;
+}
+.nav-burger span {
+  display:block; height:2px; background:rgba(255,255,255,0.75); border-radius:2px;
+  transition:all 0.3s;
+}
+.nav-burger.open span:nth-child(1) { transform:translateY(7px) rotate(45deg); }
+.nav-burger.open span:nth-child(2) { opacity:0; transform:scaleX(0); }
+.nav-burger.open span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
+
+/* mobile drawer */
+.nav-drawer {
+  display:none; position:fixed; top:60px; left:0; right:0; z-index:999;
+  background:rgba(14,9,2,0.99); backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(244,160,32,0.2);
+  flex-direction:column; padding:0.75rem 1.25rem 1.25rem;
+  transform:translateY(-8px); opacity:0;
+  transition:opacity 0.25s, transform 0.25s;
+  pointer-events:none; max-height:calc(100vh - 60px); overflow-y:auto;
+}
+.nav-drawer.open { transform:translateY(0); opacity:1; pointer-events:all; }
+.nav-drawer > a {
+  color:rgba(255,255,255,0.65); text-decoration:none; font-size:0.9rem; font-weight:500;
+  padding:0.7rem 0.9rem; border-radius:8px; transition:all 0.18s;
+  display:flex; align-items:center; gap:0.6rem; letter-spacing:0.2px;
+  border-bottom:1px solid rgba(244,160,32,0.07);
+}
+.nav-drawer > a:last-child { border-bottom:none; }
+.nav-drawer > a:hover { color:var(--sun); background:rgba(244,160,32,0.09); }
+.nav-drawer .nav-icon { font-size:1rem; width:1.4rem; text-align:center; }
+.drawer-section { font-size:0.6rem; letter-spacing:2px; text-transform:uppercase; color:rgba(244,160,32,0.4); padding:0.8rem 0.9rem 0.2rem; font-family:'DM Mono',monospace; }
+
+/* ─── HERO ─── */
+#hero {
+  min-height:100vh;
+  background:linear-gradient(135deg, #110B04 0%, #2D1A00 45%, #1A1208 100%);
+  display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden; padding-top:60px;
+}
+.hero-glow {
+  position:absolute; width:700px; height:700px; border-radius:50%;
+  background:radial-gradient(circle, rgba(244,160,32,0.18) 0%, rgba(224,123,0,0.06) 45%, transparent 70%);
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  animation:breathe 5s ease-in-out infinite;
+}
+@keyframes breathe { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.1)} }
+.hero-ring {
+  position:absolute; border-radius:50%; border:1px solid rgba(244,160,32,0.07);
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  animation:spin 60s linear infinite;
+}
+.hero-ring:nth-child(2){ width:800px; height:800px; }
+.hero-ring:nth-child(3){ width:1050px; height:1050px; animation-duration:90s; animation-direction:reverse; }
+.hero-ring:nth-child(4){ width:1300px; height:1300px; animation-duration:120s; }
+@keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg) } }
+.hero-dot { position:absolute; border-radius:50%; background:var(--sun); opacity:0.15; animation:float 8s ease-in-out infinite; }
+.hero-dot:nth-child(5){ width:6px;height:6px; top:25%;left:20%; animation-delay:0s; }
+.hero-dot:nth-child(6){ width:4px;height:4px; top:65%;left:75%; animation-delay:2s; }
+.hero-dot:nth-child(7){ width:8px;height:8px; top:40%;left:80%; animation-delay:4s; }
+.hero-dot:nth-child(8){ width:5px;height:5px; top:70%;left:25%; animation-delay:1s; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }
+.hero-content { position:relative; text-align:center; padding:2rem; max-width:760px; }
+.hero-badge {
+  display:inline-flex; align-items:center; gap:0.5rem;
+  background:rgba(244,160,32,0.12); border:1px solid rgba(244,160,32,0.35);
+  color:var(--sun); font-size:0.75rem; font-weight:600; letter-spacing:2px; text-transform:uppercase;
+  padding:0.4rem 1.2rem; border-radius:20px; margin-bottom:1.75rem;
+}
+.hero-title { font-family:'Playfair Display',serif; font-size:clamp(2.6rem,6.5vw,5.2rem); color:#fff; line-height:1.08; margin-bottom:1.1rem; font-weight:900; }
+.hero-title em { color:var(--sun); font-style:italic; display:block; }
+.hero-sub { color:rgba(255,255,255,0.5); font-size:1rem; max-width:580px; margin:0 auto 2.5rem; line-height:1.75; }
+.hero-btns { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+.btn-primary { background:var(--sun); color:var(--dark); padding:0.75rem 2rem; border-radius:8px; font-weight:700; font-size:0.88rem; text-decoration:none; transition:all 0.25s; letter-spacing:0.3px; }
+.btn-primary:hover { background:#FFB83A; transform:translateY(-2px); box-shadow:0 8px 28px rgba(244,160,32,0.45); }
+.btn-secondary { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.85); border:1px solid rgba(255,255,255,0.18); padding:0.75rem 2rem; border-radius:8px; font-weight:500; font-size:0.88rem; text-decoration:none; transition:all 0.25s; }
+.btn-secondary:hover { background:rgba(255,255,255,0.14); }
+.hero-stats { display:flex; gap:0; margin-top:4rem; background:rgba(255,255,255,0.04); border:1px solid rgba(244,160,32,0.2); border-radius:16px; overflow:hidden; flex-wrap:wrap; }
+.stat { flex:1; min-width:120px; padding:1.4rem 1rem; text-align:center; border-right:1px solid rgba(244,160,32,0.15); }
+.stat:last-child { border-right:none; }
+.stat-n { font-family:'Playfair Display',serif; font-size:2rem; color:var(--sun); font-weight:700; line-height:1; }
+.stat-l { color:rgba(255,255,255,0.4); font-size:0.72rem; letter-spacing:1px; text-transform:uppercase; margin-top:0.35rem; }
+
+/* ─── SECTIONS ─── */
+section { padding:5rem 2rem; }
+.container { max-width:1200px; margin:0 auto; }
+.section-label { font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--sun); letter-spacing:3px; text-transform:uppercase; margin-bottom:0.6rem; }
+.section-title { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,4vw,2.8rem); font-weight:900; line-height:1.15; margin-bottom:0.9rem; }
+.section-sub { color:var(--muted); font-size:0.95rem; line-height:1.75; max-width:680px; margin-bottom:3rem; }
+.divider { width:48px; height:3px; background:var(--sun); border-radius:2px; margin-bottom:1.8rem; }
+
+/* ─── DASHBOARD ─── */
+.dashboard-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1.25rem; margin-bottom:3rem; }
+.dash-card { background:var(--card-bg); border:1px solid var(--border); border-radius:16px; padding:1.4rem; position:relative; overflow:hidden; transition:transform 0.2s, box-shadow 0.2s; }
+.dash-card:hover { transform:translateY(-3px); box-shadow:var(--shadow); }
+.dash-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--sun),var(--amber)); }
+.dash-card .icon { font-size:1.8rem; margin-bottom:0.9rem; }
+.dash-card .num { font-family:'Playfair Display',serif; font-size:2.2rem; font-weight:900; color:var(--dark); line-height:1; }
+.dash-card .label { color:var(--muted); font-size:0.82rem; margin-top:0.35rem; line-height:1.4; }
+
+/* ─── TABLE ─── */
+.compare-table-wrap { overflow-x:auto; border-radius:16px; border:1px solid var(--border); margin-top:1rem; box-shadow:var(--shadow); }
+table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+th { background:#1A1208; color:var(--sun); font-family:'DM Mono',monospace; font-size:0.68rem; letter-spacing:1.5px; text-transform:uppercase; padding:0.9rem 1.1rem; text-align:left; white-space:nowrap; }
+td { padding:0.8rem 1.1rem; border-bottom:1px solid rgba(244,160,32,0.1); vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr:nth-child(even) td { background:rgba(244,160,32,0.025); }
+tr:hover td { background:rgba(244,160,32,0.06); }
+.risk-pill { display:inline-block; font-size:0.68rem; font-weight:700; padding:0.2rem 0.65rem; border-radius:10px; }
+.risk-high { background:var(--warn-bg); color:var(--warn); }
+.risk-med { background:#FFF3CD; color:#7A5C00; }
+.risk-low { background:var(--safe-bg); color:var(--safe); }
+
+/* ─── PRODUCTS ─── */
+#products { background:#fff; }
+.filter-bar { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:2rem; }
+.filter-btn { padding:0.38rem 1rem; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:0.81rem; cursor:pointer; transition:all 0.2s; font-family:'DM Sans',sans-serif; }
+.filter-btn.active, .filter-btn:hover { background:var(--sun); color:var(--dark); border-color:var(--sun); font-weight:600; }
+.products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:1.75rem; }
+.product-card { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; overflow:hidden; transition:all 0.3s; position:relative; }
+.product-card:hover { transform:translateY(-4px); box-shadow:0 16px 48px rgba(244,160,32,0.15); }
+.product-header { background:linear-gradient(135deg,#150E04,#2D1A00); padding:1.4rem; display:flex; align-items:center; gap:1rem; }
+.product-img-placeholder { width:76px; height:76px; border-radius:10px; background:linear-gradient(135deg,var(--sun),var(--amber)); display:flex; align-items:center; justify-content:center; font-size:1.7rem; flex-shrink:0; }
+.product-brand { color:rgba(255,255,255,0.5); font-size:0.72rem; letter-spacing:1px; text-transform:uppercase; }
+.product-name { color:#fff; font-family:'Playfair Display',serif; font-size:0.96rem; font-weight:700; line-height:1.3; margin-top:0.2rem; }
+.product-meta { display:flex; gap:0.4rem; margin-top:0.5rem; flex-wrap:wrap; }
+.badge { font-size:0.68rem; font-weight:600; padding:0.18rem 0.55rem; border-radius:10px; letter-spacing:0.4px; }
+.badge-price { background:rgba(244,160,32,0.2); color:var(--sun); }
+.badge-type { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.65); }
+.badge-spf { background:rgba(45,122,79,0.3); color:#7EE4A8; }
+.product-body { padding:1.4rem; }
+.product-section { margin-bottom:1.1rem; }
+.prod-label { font-family:'DM Mono',monospace; font-size:0.65rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:0.45rem; }
+.ingredient-tag { display:inline-block; font-size:0.7rem; padding:0.22rem 0.55rem; border-radius:6px; margin:0.12rem; font-weight:500; }
+.tag-uv { background:#FFF3CD; color:#7A5C00; border:1px solid #EDD060; }
+.tag-beneficial { background:var(--safe-bg); color:var(--safe); border:1px solid #B0D8BC; }
+.tag-harmful { background:var(--warn-bg); color:var(--warn); border:1px solid #EEB0B0; }
+.tag-replace { background:var(--neutral-bg); color:var(--neutral); border:1px solid #C4D0DC; }
+.risk-bar { height:5px; background:#EEE; border-radius:3px; margin-top:0.5rem; overflow:hidden; }
+.risk-fill { height:100%; border-radius:3px; transition:width 0.7s cubic-bezier(0.4,0,0.2,1); }
+
+/* ─── CHARTS ─── */
+#analysis { background:linear-gradient(180deg,#fff 0%,var(--cream) 100%); }
+.charts-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(370px,1fr)); gap:1.75rem; }
+.chart-card { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:1.8rem; }
+.chart-title { font-family:'Playfair Display',serif; font-size:1.05rem; font-weight:700; margin-bottom:0.25rem; }
+.chart-sub { color:var(--muted); font-size:0.8rem; margin-bottom:1.4rem; }
+.chart-wrap { position:relative; height:270px; }
+
+/* ─── CASE STUDIES ─── */
+#cases { background:#fff; }
+.cases-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:1.75rem; }
+.case-card { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:1.8rem; }
+.case-tag { display:inline-block; font-size:0.68rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; padding:0.28rem 0.75rem; border-radius:20px; margin-bottom:0.9rem; }
+.tag-national { background:#FFF3CD; color:#7A5C00; }
+.tag-international { background:#E8F0FE; color:#1A56DB; }
+.tag-clinical { background:var(--safe-bg); color:var(--safe); }
+.case-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; margin-bottom:0.7rem; line-height:1.4; }
+.case-body { color:var(--muted); font-size:0.86rem; line-height:1.72; }
+.case-meta { display:flex; gap:1.2rem; margin-top:1.4rem; padding-top:1rem; border-top:1px solid var(--border); flex-wrap:wrap; }
+.case-meta-item { font-size:0.76rem; color:var(--muted); }
+.case-meta-item strong { color:var(--text); display:block; font-size:0.8rem; }
+
+/* ─── PRODUCTION ─── */
+#production { background:linear-gradient(135deg,#110B04,#2D1A00); color:#fff; }
+#production .section-title { color:#fff; }
+#production .section-sub { color:rgba(255,255,255,0.45); }
+.steps-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:1.25rem; }
+.step-card { background:rgba(255,255,255,0.05); border:1px solid rgba(244,160,32,0.18); border-radius:16px; padding:1.6rem; position:relative; transition:background 0.2s; }
+.step-card:hover { background:rgba(255,255,255,0.08); }
+.step-num { font-family:'Playfair Display',serif; font-size:3rem; font-weight:900; color:rgba(244,160,32,0.12); position:absolute; top:1rem; right:1.2rem; line-height:1; }
+.step-icon { font-size:1.6rem; margin-bottom:0.8rem; }
+.step-title { color:var(--sun); font-weight:700; font-size:0.95rem; margin-bottom:0.45rem; }
+.step-desc { color:rgba(255,255,255,0.5); font-size:0.83rem; line-height:1.7; }
+
+/* ─── SKIN EFFECTS ─── */
+#effects { background:var(--cream); }
+.effects-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:1.25rem; }
+.effect-card { background:#fff; border:1px solid var(--border); border-radius:16px; padding:1.4rem; transition:transform 0.2s; }
+.effect-card:hover { transform:translateY(-2px); }
+.effect-icon { font-size:1.8rem; margin-bottom:0.65rem; }
+.effect-title { font-weight:700; font-size:0.96rem; margin-bottom:0.4rem; }
+.effect-type { display:inline-block; font-size:0.66rem; font-weight:600; text-transform:uppercase; letter-spacing:1px; padding:0.18rem 0.55rem; border-radius:10px; margin-bottom:0.65rem; }
+.effect-positive { background:var(--safe-bg); color:var(--safe); }
+.effect-negative { background:var(--warn-bg); color:var(--warn); }
+.effect-desc { color:var(--muted); font-size:0.83rem; line-height:1.65; }
+
+/* ─── DISEASES ─── */
+#diseases { background:#fff; }
+.disease-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:1.25rem; }
+.disease-card { border-left:4px solid var(--warn); background:var(--warn-bg); border-radius:0 16px 16px 0; padding:1.4rem; }
+.disease-card.moderate { border-color:var(--sun); background:#FFF8EE; }
+.disease-card.mild { border-color:var(--safe); background:var(--safe-bg); }
+.disease-name { font-weight:700; font-size:0.97rem; margin-bottom:0.45rem; color:var(--dark); }
+.disease-cause { color:var(--muted); font-size:0.83rem; line-height:1.65; }
+.disease-chemical { font-family:'DM Mono',monospace; font-size:0.73rem; color:var(--warn); margin-top:0.5rem; }
+.disease-card.moderate .disease-chemical { color:var(--amber); }
+.disease-card.mild .disease-chemical { color:var(--safe); }
+
+/* ─── ABOUT ─── */
+#about { background:linear-gradient(135deg,#110B04,#2D1A00); }
+.about-inner { display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center; }
+@media(max-width:720px){ .about-inner{grid-template-columns:1fr;gap:2.5rem;} }
+.about-dev { background:rgba(255,255,255,0.05); border:1px solid rgba(244,160,32,0.22); border-radius:24px; padding:2.4rem; text-align:center; }
+.dev-avatar { width:92px; height:92px; border-radius:50%; background:linear-gradient(135deg,var(--sun),var(--amber)); display:flex; align-items:center; justify-content:center; font-size:2.2rem; margin:0 auto 1.4rem; box-shadow:0 0 0 5px rgba(244,160,32,0.18); }
+.dev-name { font-family:'Playfair Display',serif; font-size:1.5rem; color:#fff; font-weight:900; }
+.dev-role { color:var(--sun); font-size:0.82rem; letter-spacing:2px; text-transform:uppercase; margin-top:0.3rem; }
+.dev-bio { color:rgba(255,255,255,0.5); font-size:0.87rem; line-height:1.72; margin-top:0.9rem; }
+.dev-tags { display:flex; gap:0.6rem; justify-content:center; flex-wrap:wrap; margin-top:1.4rem; }
+.dev-tag { background:rgba(244,160,32,0.12); color:var(--sun); font-size:0.76rem; padding:0.28rem 0.75rem; border-radius:20px; border:1px solid rgba(244,160,32,0.28); }
+.project-info { background:rgba(255,255,255,0.05); border:1px solid rgba(244,160,32,0.18); border-radius:16px; padding:1.4rem; margin-top:1.4rem; }
+.project-info-row { display:flex; justify-content:space-between; padding:0.55rem 0; border-bottom:1px solid rgba(255,255,255,0.07); font-size:0.86rem; gap:1rem; }
+.project-info-row:last-child { border-bottom:none; }
+.pir-label { color:rgba(255,255,255,0.4); }
+.pir-value { color:#fff; font-weight:500; text-align:right; }
+
+/* ─── FOOTER ─── */
+footer { background:#080500; padding:2rem; text-align:center; color:rgba(255,255,255,0.28); font-size:0.8rem; border-top:1px solid rgba(244,160,32,0.1); }
+footer span { color:var(--sun); }
+
+/* ─── SCROLL REVEAL ─── */
+.reveal { opacity:0; transform:translateY(24px); transition:opacity 0.55s, transform 0.55s; }
+.reveal.visible { opacity:1; transform:none; }
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:960px){
+  .nav-links { display:none; }
+  .nav-burger { display:flex; }
+  .nav-drawer { display:flex; }
+}
+@media(max-width:768px){
+  .products-grid { grid-template-columns:1fr; }
+  .charts-grid { grid-template-columns:1fr; }
+  .cases-grid { grid-template-columns:1fr; }
+  .steps-grid { grid-template-columns:1fr; }
+  .hero-stats { border-radius:12px; }
+  .stat { min-width:50%; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ NAV ═══════════════════════════════════════════ -->
+<nav>
+  <div class="nav-logo">Sun<span>Shield</span> Lab</div>
+
+  <!-- Desktop nav with dropdowns -->
+  <div class="nav-links">
+
+    <!-- Dashboard -->
+    <div class="nav-item">
+      <a href="#dashboard">
+        Dashboard
+        <svg class="chev" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="dropdown">
+        <div class="drop-header">Overview</div>
+        <a class="drop-link" href="#dashboard">
+          <span class="drop-icon">📊</span>
+          <span><span class="drop-title">Research Dashboard</span><span class="drop-sub">20 products at a glance</span></span>
+        </a>
+        <a class="drop-link" href="#dashboard">
+          <span class="drop-icon">📋</span>
+          <span><span class="drop-title">Quick Comparison Table</span><span class="drop-sub">SPF, price, risk & filter type</span></span>
+        </a>
+        <a class="drop-link" href="#dashboard">
+          <span class="drop-icon">🔢</span>
+          <span><span class="drop-title">Key Statistics</span><span class="drop-sub">Harmful compounds & alternatives</span></span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Products -->
+    <div class="nav-item">
+      <a href="#products">
+        Products
+        <svg class="chev" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="dropdown" style="min-width:240px;">
+        <div class="drop-header">Product Profiles</div>
+        <a class="drop-link" href="#products">
+          <span class="drop-icon">🧴</span>
+          <span><span class="drop-title">All 20 Products</span><span class="drop-sub">Full ingredient chemistry breakdown</span></span>
+        </a>
+        <div class="drop-divider"></div>
+        <div class="drop-header">Filter by Type</div>
+        <a class="drop-link" href="#products" onclick="filterProducts('chemical',document.querySelector('[onclick*=chemical]'));return false;">
+          <span class="drop-icon">⚗️</span>
+          <span><span class="drop-title">Chemical Sunscreens</span><span class="drop-sub">13 products — UV absorbers</span></span>
+        </a>
+        <a class="drop-link" href="#products" onclick="filterProducts('physical',document.querySelector('[onclick*=physical]'));return false;">
+          <span class="drop-icon">🛡️</span>
+          <span><span class="drop-title">Physical / Mineral</span><span class="drop-sub">ZnO &amp; TiO₂ — 2 products</span></span>
+        </a>
+        <a class="drop-link" href="#products" onclick="filterProducts('hybrid',document.querySelector('[onclick*=hybrid]'));return false;">
+          <span class="drop-icon">🔀</span>
+          <span><span class="drop-title">Hybrid Formulations</span><span class="drop-sub">5 products — dual-filter</span></span>
+        </a>
+        <div class="drop-divider"></div>
+        <a class="drop-link" href="#products" onclick="filterProducts('low',document.querySelector('[onclick*=low]'));return false;">
+          <span class="drop-icon">✅</span>
+          <span><span class="drop-title">Low Risk Only</span><span class="drop-sub">Safer ingredient profiles</span></span>
+        </a>
+        <a class="drop-link" href="#products" onclick="filterProducts('high',document.querySelector('[onclick*=high]'));return false;">
+          <span class="drop-icon">⚠️</span>
+          <span><span class="drop-title">High Risk Products</span><span class="drop-sub">Oxybenzone, OMC &amp; more</span></span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Analysis -->
+    <div class="nav-item">
+      <a href="#analysis">
+        Analysis
+        <svg class="chev" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="dropdown" style="min-width:235px;">
+        <div class="drop-header">Data Insights</div>
+        <a class="drop-link" href="#analysis">
+          <span class="drop-icon">💰</span>
+          <span><span class="drop-title">Price vs SPF Chart</span><span class="drop-sub">Does higher cost equal better protection?</span></span>
+        </a>
+        <a class="drop-link" href="#analysis">
+          <span class="drop-icon">🥧</span>
+          <span><span class="drop-title">Filter Type Distribution</span><span class="drop-sub">Market share by formulation</span></span>
+        </a>
+        <a class="drop-link" href="#analysis">
+          <span class="drop-icon">📉</span>
+          <span><span class="drop-title">Risk Level Breakdown</span><span class="drop-sub">High / medium / low spread</span></span>
+        </a>
+        <a class="drop-link" href="#analysis">
+          <span class="drop-icon">☣️</span>
+          <span><span class="drop-title">Harmful Chemical Frequency</span><span class="drop-sub">Most common offenders across 20 products</span></span>
+        </a>
+        <a class="drop-link" href="#analysis">
+          <span class="drop-icon">🏪</span>
+          <span><span class="drop-title">Market Segments</span><span class="drop-sub">Budget to luxury pricing share</span></span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Case Studies -->
+    <div class="nav-item">
+      <a href="#cases">
+        Case Studies
+        <svg class="chev" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="dropdown" style="min-width:260px;">
+        <div class="drop-header">🇮🇳 National Studies</div>
+        <a class="drop-link" href="#cases">
+          <span class="drop-icon">🏙️</span>
+          <span><span class="drop-title">Mumbai Cohort Study</span><span class="drop-sub">Usage patterns in urban India — 2022</span></span>
+        </a>
+        <a class="drop-link" href="#cases">
+          <span class="drop-icon">🏛️</span>
+          <span><span class="drop-title">CDSCO Ingredient Review</span><span class="drop-sub">BP-3 &amp; OMC prevalence — 2021</span></span>
+        </a>
+        <a class="drop-link" href="#cases">
+          <span class="drop-icon">🏥</span>
+          <span><span class="drop-title">AIIMS Melanoma Study</span><span class="drop-sub">SPF vs hyperpigmentation — 2020</span></span>
+        </a>
+        <a class="drop-link" href="#cases">
+          <span class="drop-icon">🧪</span>
+          <span><span class="drop-title">IIT Bombay Metal Study</span><span class="drop-sub">Heavy metal contamination — 2023</span></span>
+        </a>
+        <div class="drop-divider"></div>
+        <div class="drop-header">🌍 International Research</div>
+        <a class="drop-link" href="#cases">
+          <span class="drop-icon">📄</span>
+          <span><span class="drop-title">FDA / JAMA Study</span><span class="drop-sub">Systemic absorption — 2019</span></span>
+        </a>
+        <a class="drop-link" href="#cases">
+          <span class="drop-icon">🪸</span>
+          <span><span class="drop-title">Hawaii Sunscreen Ban</span><span class="drop-sub">Coral reef damage — 2018–2021</span></span>
+        </a>
+        <a class="drop-link" href="#cases">
+          <span class="drop-icon">🇪🇺</span>
+          <span><span class="drop-title">EU SCCS Assessment</span><span class="drop-sub">BP-3 limit cut + Tinosorb S rise</span></span>
+        </a>
+        <a class="drop-link" href="#cases">
+          <span class="drop-icon">🔬</span>
+          <span><span class="drop-title">Tinosorb S vs Avobenzone</span><span class="drop-sub">Photostability comparison — 2020</span></span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Production -->
+    <div class="nav-item">
+      <a href="#production">
+        Production
+        <svg class="chev" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="dropdown" style="min-width:240px;">
+        <div class="drop-header">Manufacturing Process</div>
+        <a class="drop-link" href="#production">
+          <span class="drop-icon">🔬</span>
+          <span><span class="drop-title">UV Filter Sourcing</span><span class="drop-sub">Selection &amp; purity specs (&gt;99%)</span></span>
+        </a>
+        <a class="drop-link" href="#production">
+          <span class="drop-icon">🧫</span>
+          <span><span class="drop-title">Phase Preparation</span><span class="drop-sub">Oil &amp; water phase formulation</span></span>
+        </a>
+        <a class="drop-link" href="#production">
+          <span class="drop-icon">🌀</span>
+          <span><span class="drop-title">Emulsification</span><span class="drop-sub">High-shear homogenisation</span></span>
+        </a>
+        <a class="drop-link" href="#production">
+          <span class="drop-icon">📊</span>
+          <span><span class="drop-title">SPF &amp; UVA Testing</span><span class="drop-sub">ISO 24444, PA++ methods</span></span>
+        </a>
+        <a class="drop-link" href="#production">
+          <span class="drop-icon">🧪</span>
+          <span><span class="drop-title">Safety &amp; Stability</span><span class="drop-sub">Patch testing &amp; shelf-life eval</span></span>
+        </a>
+        <a class="drop-link" href="#production">
+          <span class="drop-icon">🏭</span>
+          <span><span class="drop-title">GMP Scale-Up &amp; Release</span><span class="drop-sub">CDSCO regulatory compliance</span></span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Skin Effects -->
+    <div class="nav-item">
+      <a href="#effects">
+        Skin Effects
+        <svg class="chev" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="dropdown" style="min-width:245px;">
+        <div class="drop-header">Beneficial Effects</div>
+        <a class="drop-link" href="#effects">
+          <span class="drop-icon">☀️</span>
+          <span><span class="drop-title">UV Radiation Blocking</span><span class="drop-sub">UVA &amp; UVB protection mechanisms</span></span>
+        </a>
+        <a class="drop-link" href="#effects">
+          <span class="drop-icon">🛡️</span>
+          <span><span class="drop-title">Prevention of Photoaging</span><span class="drop-sub">MMP suppression &amp; collagen preservation</span></span>
+        </a>
+        <a class="drop-link" href="#effects">
+          <span class="drop-icon">🎨</span>
+          <span><span class="drop-title">Hyperpigmentation Control</span><span class="drop-sub">MC1R pathway &amp; melanogenesis</span></span>
+        </a>
+        <a class="drop-link" href="#effects">
+          <span class="drop-icon">🧬</span>
+          <span><span class="drop-title">Skin Cancer Prevention</span><span class="drop-sub">p53 gene mutation reduction</span></span>
+        </a>
+        <div class="drop-divider"></div>
+        <div class="drop-header">Adverse Reactions</div>
+        <a class="drop-link" href="#effects">
+          <span class="drop-icon">⚠️</span>
+          <span><span class="drop-title">Contact &amp; Photoallergic Dermatitis</span><span class="drop-sub">BP-3 sensitisation — ~1–4% users</span></span>
+        </a>
+        <a class="drop-link" href="#effects">
+          <span class="drop-icon">🔴</span>
+          <span><span class="drop-title">Comedogenic Reactions</span><span class="drop-sub">Pore-clogging formulations</span></span>
+        </a>
+        <a class="drop-link" href="#effects">
+          <span class="drop-icon">🧪</span>
+          <span><span class="drop-title">Systemic Absorption</span><span class="drop-sub">209 ng/mL plasma — FDA 2019</span></span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Diseases -->
+    <div class="nav-item">
+      <a href="#diseases">
+        Diseases
+        <svg class="chev" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="dropdown" style="min-width:255px;">
+        <div class="drop-header">🔴 High Severity</div>
+        <a class="drop-link" href="#diseases">
+          <span class="drop-icon">🧬</span>
+          <span><span class="drop-title">Endocrine Disruption Syndrome</span><span class="drop-sub">Oxybenzone, OMC, Homosalate</span></span>
+        </a>
+        <a class="drop-link" href="#diseases">
+          <span class="drop-icon">🩹</span>
+          <span><span class="drop-title">Photoallergic Contact Dermatitis</span><span class="drop-sub">BP-3, Octocrylene, PABA</span></span>
+        </a>
+        <div class="drop-divider"></div>
+        <div class="drop-header">🟡 Moderate Severity</div>
+        <a class="drop-link" href="#diseases">
+          <span class="drop-icon">⚗️</span>
+          <span><span class="drop-title">Octocrylene / BP Accumulation</span><span class="drop-sub">Group 2B carcinogen metabolite</span></span>
+        </a>
+        <a class="drop-link" href="#diseases">
+          <span class="drop-icon">🔬</span>
+          <span><span class="drop-title">Nano-TiO₂ Cytotoxicity &amp; ROS</span><span class="drop-sub">Reactive oxygen species risk</span></span>
+        </a>
+        <div class="drop-divider"></div>
+        <div class="drop-header">🟢 Mild / Indirect</div>
+        <a class="drop-link" href="#diseases">
+          <span class="drop-icon">🌞</span>
+          <span><span class="drop-title">Vitamin D Deficiency</span><span class="drop-sub">High-SPF overcorrection risk</span></span>
+        </a>
+        <a class="drop-link" href="#diseases">
+          <span class="drop-icon">🧴</span>
+          <span><span class="drop-title">Preservative Sensitivity</span><span class="drop-sub">Parabens &amp; Phenoxyethanol &gt;1%</span></span>
+        </a>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="nav-item">
+      <a href="#about">
+        About
+        <svg class="chev" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="dropdown align-right" style="min-width:230px;">
+        <div class="drop-header">Team</div>
+        <a class="drop-link" href="#about">
+          <span class="drop-icon">👨‍🔬</span>
+          <span><span class="drop-title">Shridatta Patil</span><span class="drop-sub">Developer &amp; Researcher · PCCOE</span></span>
+        </a>
+        <a class="drop-link" href="#about">
+          <span class="drop-icon">🎓</span>
+          <span><span class="drop-title">Dr. Amol Kharche</span><span class="drop-sub">Project Guide &amp; Director</span></span>
+        </a>
+        <div class="drop-divider"></div>
+        <div class="drop-header">Project</div>
+        <a class="drop-link" href="#about">
+          <span class="drop-icon">🏫</span>
+          <span><span class="drop-title">PCCOE — 2026</span><span class="drop-sub">Chemistry project details &amp; methodology</span></span>
+        </a>
+        <a class="drop-link" href="#about">
+          <span class="drop-icon">📚</span>
+          <span><span class="drop-title">Data Sources</span><span class="drop-sub">CDSCO, FDA, SCCS, JAMA, IIT, AIIMS</span></span>
+        </a>
+      </div>
+    </div>
+
+  </div><!-- end .nav-links -->
+
+  <!-- Hamburger for mobile -->
+  <button class="nav-burger" id="navBurger" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE DRAWER -->
+<div class="nav-drawer" id="navDrawer">
+  <div class="drawer-section">Overview</div>
+  <a href="#dashboard" onclick="closeDrawer()"><span class="nav-icon">📊</span>Dashboard</a>
+  <div class="drawer-section">Content</div>
+  <a href="#products"   onclick="closeDrawer()"><span class="nav-icon">🧴</span>Products</a>
+  <a href="#analysis"   onclick="closeDrawer()"><span class="nav-icon">📈</span>Analysis</a>
+  <a href="#cases"      onclick="closeDrawer()"><span class="nav-icon">🔬</span>Case Studies</a>
+  <div class="drawer-section">Deep Dive</div>
+  <a href="#production" onclick="closeDrawer()"><span class="nav-icon">🏭</span>Production</a>
+  <a href="#effects"    onclick="closeDrawer()"><span class="nav-icon">💆</span>Skin Effects</a>
+  <a href="#diseases"   onclick="closeDrawer()"><span class="nav-icon">⚠️</span>Diseases</a>
+  <div class="drawer-section">Info</div>
+  <a href="#about"      onclick="closeDrawer()"><span class="nav-icon">👤</span>About</a>
+</div>
+
+<!-- ═══════════════════════════════════════════ HERO ═══════════════════════════════════════════ -->
+<section id="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-ring"></div>
+  <div class="hero-ring"></div>
+  <div class="hero-ring"></div>
+  <div class="hero-dot"></div>
+  <div class="hero-dot"></div>
+  <div class="hero-dot"></div>
+  <div class="hero-dot"></div>
+  <div class="hero-content reveal">
+    <div class="hero-badge">⚗️ Chemistry Project · PCCOE · 2026</div>
+    <h1 class="hero-title">Case Study on<em>Sunscreen</em>Chemistry</h1>
+    <p class="hero-sub">A comprehensive cosmetic chemistry analysis of 20 Indian sunscreen products — examining UV filters, harmful compounds, safer alternatives, and market trends.</p>
+    <div class="hero-btns">
+      <a href="#products" class="btn-primary">Explore Products</a>
+      <a href="#cases" class="btn-secondary">View Case Studies</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-n">20</div><div class="stat-l">Products Analysed</div></div>
+      <div class="stat"><div class="stat-n">50+</div><div class="stat-l">Active Chemicals</div></div>
+      <div class="stat"><div class="stat-n">10</div><div class="stat-l">Harmful Compounds</div></div>
+      <div class="stat"><div class="stat-n">15</div><div class="stat-l">Safer Alternatives</div></div>
+      <div class="stat"><div class="stat-n">8</div><div class="stat-l">Case Studies</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ DASHBOARD ═══════════════════════════════════════════ -->
+<section id="dashboard">
+  <div class="container">
+    <div class="section-label">Overview</div>
+    <h2 class="section-title">Research Dashboard</h2>
+    <div class="divider"></div>
+    <div class="dashboard-grid reveal">
+      <div class="dash-card"><div class="icon">🧴</div><div class="num">20</div><div class="label">Sunscreens Reviewed</div></div>
+      <div class="dash-card"><div class="icon">☣️</div><div class="num">8</div><div class="label">Harmful UV Filters Identified</div></div>
+      <div class="dash-card"><div class="icon">🌿</div><div class="num">12</div><div class="label">Safer Replacements Found</div></div>
+      <div class="dash-card"><div class="icon">💰</div><div class="num">₹249–4500</div><div class="label">Price Range Covered</div></div>
+      <div class="dash-card"><div class="icon">🔬</div><div class="num">3</div><div class="label">Filter Types Analysed</div></div>
+      <div class="dash-card"><div class="icon">🌍</div><div class="num">8</div><div class="label">International Case Studies</div></div>
+    </div>
+
+    <div class="section-label" style="margin-top:3rem">Quick Comparison</div>
+    <h3 class="section-title" style="font-size:1.55rem">All 20 Products at a Glance</h3>
+    <div class="compare-table-wrap reveal">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Brand &amp; Product</th><th>Price / Vol</th><th>SPF</th><th>Filter Type</th>
+            <th>Key Concern Chemical</th><th>Risk</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Lotus Herbals Safe Sun UV Screen Matte Gel</td><td>₹350 / 50g</td><td>SPF 50</td><td>Chemical</td><td>Oxybenzone, Octinoxate</td><td><span class="risk-pill risk-high">High</span></td></tr>
+          <tr><td>2</td><td>Neutrogena Ultra Sheer Dry-Touch</td><td>₹599 / 88ml</td><td>SPF 50+</td><td>Chemical</td><td>Homosalate, Avobenzone</td><td><span class="risk-pill risk-med">Medium</span></td></tr>
+          <tr><td>3</td><td>Dot &amp; Key Watermelon Sunscreen</td><td>₹595 / 50g</td><td>SPF 50 PA++++</td><td>Chemical</td><td>Benzophenone-3, OMC</td><td><span class="risk-pill risk-high">High</span></td></tr>
+          <tr><td>4</td><td>Minimalist Sunscreen SPF 50 PA++++</td><td>₹399 / 50ml</td><td>SPF 50 PA++++</td><td>Hybrid</td><td>Dimethicone (env.)</td><td><span class="risk-pill risk-low">Low</span></td></tr>
+          <tr><td>5</td><td>Lakmé Sun Expert SPF 50 Tinted</td><td>₹345 / 50ml</td><td>SPF 50 PA+++</td><td>Chemical</td><td>Benzophenone-3, OMC</td><td><span class="risk-pill risk-high">High</span></td></tr>
+          <tr><td>6</td><td>Re'equil Oxybenzone &amp; OMC Free SPF 50</td><td>₹595 / 50g</td><td>SPF 50</td><td>Safer Chemical</td><td>Octyl Salicylate, Phenoxyethanol</td><td><span class="risk-pill risk-low">Low</span></td></tr>
+          <tr><td>7</td><td>La Shield Fisico SPF 50+ Gel (Glenmark)</td><td>₹499 / 50g</td><td>SPF 50+</td><td>Physical/Mineral</td><td>TiO₂ nanoparticles (if nano)</td><td><span class="risk-pill risk-low">Low</span></td></tr>
+          <tr><td>8</td><td>Bioderma Photoderm MAX SPF 100+</td><td>₹1,650 / 40ml</td><td>SPF 100+</td><td>Hybrid</td><td>Nano-TiO₂, Fragrance traces</td><td><span class="risk-pill risk-med">Medium</span></td></tr>
+          <tr><td>9</td><td>VLCC Matte Look SPF 40</td><td>₹249 / 100ml</td><td>SPF 40</td><td>Chemical</td><td>BP-3, OMC, Methylparaben</td><td><span class="risk-pill risk-high">High</span></td></tr>
+          <tr><td>10</td><td>Sebamed Sun Care Multi Protect SPF 50+</td><td>₹899 / 75ml</td><td>SPF 50+</td><td>Chemical</td><td>Avobenzone degradation, Octocrylene</td><td><span class="risk-pill risk-med">Medium</span></td></tr>
+          <tr><td>11</td><td>Plum Green Tea Renewed Clarity SPF 35</td><td>₹475 / 50ml</td><td>SPF 35 PA+++</td><td>Chemical</td><td>BP-3, OMC, SPF too low</td><td><span class="risk-pill risk-high">High</span></td></tr>
+          <tr><td>12</td><td>Kaya Clinic Daily Moisturising SPF 30</td><td>₹725 / 50ml</td><td>SPF 30</td><td>Chemical</td><td>Oxybenzone, Octinoxate, SPF low</td><td><span class="risk-pill risk-high">High</span></td></tr>
+          <tr><td>13</td><td>SkinCeuticals Physical Fusion UV Defense</td><td>₹4,500 / 50ml</td><td>SPF 50</td><td>Physical/Mineral</td><td>Nano-TiO₂ risk</td><td><span class="risk-pill risk-low">Low</span></td></tr>
+          <tr><td>14</td><td>Cetaphil Sun SPF 50+ Light Gel</td><td>₹799 / 50ml</td><td>SPF 50+</td><td>Hybrid</td><td>Phenoxyethanol, Dimethicone</td><td><span class="risk-pill risk-low">Low</span></td></tr>
+          <tr><td>15</td><td>Colorbar Skin Shield SPF 60 PA++++</td><td>₹525 / 60ml</td><td>SPF 60 PA++++</td><td>Chemical</td><td>Oxybenzone, Octinoxate, Fragrance</td><td><span class="risk-pill risk-high">High</span></td></tr>
+          <tr><td>16</td><td>Mamaearth HydraGel Indian Sunscreen SPF 50</td><td>₹399 / 50g</td><td>SPF 50 PA++++</td><td>Chemical</td><td>Octinoxate, Octocrylene</td><td><span class="risk-pill risk-med">Medium</span></td></tr>
+          <tr><td>17</td><td>WOW Skin Science SPF 60 PA++++ Sunscreen</td><td>₹449 / 50ml</td><td>SPF 60 PA++++</td><td>Chemical</td><td>Benzophenone-3, OMC</td><td><span class="risk-pill risk-high">High</span></td></tr>
+          <tr><td>18</td><td>Pilgrim SPF 60 PA++++ Vitamin C Gel Sunscreen</td><td>₹525 / 45ml</td><td>SPF 60 PA++++</td><td>Safer Chemical</td><td>Phenoxyethanol (≤1%)</td><td><span class="risk-pill risk-low">Low</span></td></tr>
+          <tr><td>19</td><td>The Derma Co 1% Hyaluronic Sunscreen SPF 50</td><td>₹449 / 50g</td><td>SPF 50 PA++++</td><td>Hybrid</td><td>Avobenzone, Phenoxyethanol</td><td><span class="risk-pill risk-low">Low</span></td></tr>
+          <tr><td>20</td><td>Fixderma Shadow SPF 30+ Sunscreen Cream</td><td>₹399 / 75g</td><td>SPF 30+ PA+++</td><td>Chemical</td><td>OMC, Benzophenone-3, SPF low</td><td><span class="risk-pill risk-high">High</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ PRODUCTS ═══════════════════════════════════════════ -->
+<section id="products">
+  <div class="container">
+    <div class="section-label">Product Analysis</div>
+    <h2 class="section-title">Sunscreen Product Profiles</h2>
+    <div class="divider"></div>
+    <p class="section-sub">Detailed chemistry breakdown of 20 products — UV filters, beneficial actives, harmful compounds, and safer ingredient replacements.</p>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterProducts('all',this)">All Products</button>
+      <button class="filter-btn" onclick="filterProducts('chemical',this)">Chemical</button>
+      <button class="filter-btn" onclick="filterProducts('physical',this)">Physical / Mineral</button>
+      <button class="filter-btn" onclick="filterProducts('hybrid',this)">Hybrid</button>
+      <button class="filter-btn" onclick="filterProducts('low',this)">Low Risk</button>
+      <button class="filter-btn" onclick="filterProducts('high',this)">High Risk</button>
+    </div>
+    <div class="products-grid" id="products-grid">
+
+      <div class="product-card reveal" data-type="chemical" data-risk="high">
+        <div class="product-header"><div class="product-img-placeholder">🌸</div><div><div class="product-brand">Lotus Herbals</div><div class="product-name">Safe Sun UV Screen Matte Gel SPF 50</div><div class="product-meta"><span class="badge badge-price">₹350 / 50g</span><span class="badge badge-type">Chemical</span><span class="badge badge-spf">SPF 50</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Octinoxate</span><span class="ingredient-tag tag-uv">Oxybenzone (BP-3)</span><span class="ingredient-tag tag-uv">Octocrylene</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Aloe Vera Extract</span><span class="ingredient-tag tag-beneficial">Vitamin E (Tocopheryl Acetate)</span></div>
+          <div class="product-section"><div class="prod-label">⚠ Harmful</div><span class="ingredient-tag tag-harmful">Oxybenzone — Endocrine Disruptor</span><span class="ingredient-tag tag-harmful">Octinoxate — Photounstable, Estrogenic</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">Oxybenzone → Tinosorb S</span><span class="ingredient-tag tag-replace">Octinoxate → Ethylhexyl Triazone</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:80%;background:var(--warn)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="chemical" data-risk="medium">
+        <div class="product-header"><div class="product-img-placeholder">🌤️</div><div><div class="product-brand">Neutrogena</div><div class="product-name">Ultra Sheer Dry-Touch SPF 50+</div><div class="product-meta"><span class="badge badge-price">₹599 / 88ml</span><span class="badge badge-type">Chemical</span><span class="badge badge-spf">SPF 50+</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Avobenzone</span><span class="ingredient-tag tag-uv">Homosalate</span><span class="ingredient-tag tag-uv">Octisalate</span><span class="ingredient-tag tag-uv">Octocrylene</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Helioplex Stabiliser</span><span class="ingredient-tag tag-beneficial">Diethylhexyl 2,6-Naphthalate</span></div>
+          <div class="product-section"><div class="prod-label">⚠ Harmful</div><span class="ingredient-tag tag-harmful">Homosalate — Body fat accumulation</span><span class="ingredient-tag tag-harmful">Avobenzone — Photodegradation</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">Homosalate → Iscotrizinol (DHHB)</span><span class="ingredient-tag tag-replace">Avobenzone → Tinosorb S</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:55%;background:var(--sun)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="chemical" data-risk="high">
+        <div class="product-header"><div class="product-img-placeholder">🍉</div><div><div class="product-brand">Dot &amp; Key</div><div class="product-name">Watermelon Sunscreen SPF 50 PA++++</div><div class="product-meta"><span class="badge badge-price">₹595 / 50g</span><span class="badge badge-type">Chemical</span><span class="badge badge-spf">SPF 50 PA++++</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Ethylhexyl Methoxycinnamate (OMC)</span><span class="ingredient-tag tag-uv">Avobenzone</span><span class="ingredient-tag tag-uv">Benzophenone-3</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Watermelon Extract (Lycopene)</span><span class="ingredient-tag tag-beneficial">Niacinamide 5%</span><span class="ingredient-tag tag-beneficial">Hyaluronic Acid</span></div>
+          <div class="product-section"><div class="prod-label">⚠ Harmful</div><span class="ingredient-tag tag-harmful">Benzophenone-3 — Endocrine Disruptor</span><span class="ingredient-tag tag-harmful">OMC — Hormonal Activity</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">BP-3 → Tinosorb M</span><span class="ingredient-tag tag-replace">OMC → Ethylhexyl Triazone</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:75%;background:var(--warn)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="hybrid" data-risk="low">
+        <div class="product-header"><div class="product-img-placeholder">⚗️</div><div><div class="product-brand">Minimalist</div><div class="product-name">Sunscreen SPF 50 PA++++ (Next-Gen EU)</div><div class="product-meta"><span class="badge badge-price">₹399 / 50ml</span><span class="badge badge-type">Hybrid</span><span class="badge badge-spf">SPF 50 PA++++</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters (Next-Gen EU)</div><span class="ingredient-tag tag-uv">DHHB (Uvinul A Plus)</span><span class="ingredient-tag tag-uv">Tinosorb S</span><span class="ingredient-tag tag-uv">Ethylhexyl Triazone</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Niacinamide 5%</span><span class="ingredient-tag tag-beneficial">Tocopherol (Vitamin E)</span></div>
+          <div class="product-section"><div class="prod-label">Minor Concerns</div><span class="ingredient-tag tag-harmful">Dimethicone — Non-biodegradable</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">Dimethicone → Isodecyl Neopentanoate</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:20%;background:var(--safe)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="chemical" data-risk="high">
+        <div class="product-header"><div class="product-img-placeholder">🌅</div><div><div class="product-brand">Lakmé</div><div class="product-name">Sun Expert SPF 50 PA+++ Tinted</div><div class="product-meta"><span class="badge badge-price">₹345 / 50ml</span><span class="badge badge-type">Chemical</span><span class="badge badge-spf">SPF 50 PA+++</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Octyl Methoxycinnamate</span><span class="ingredient-tag tag-uv">Benzophenone-3</span><span class="ingredient-tag tag-uv">Octocrylene</span><span class="ingredient-tag tag-uv">Iron Oxides</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Iron Oxides (HEV/Visible Light)</span><span class="ingredient-tag tag-beneficial">Vitamin C (Ascorbyl Glucoside)</span><span class="ingredient-tag tag-beneficial">Glycerin</span></div>
+          <div class="product-section"><div class="prod-label">⚠ Harmful</div><span class="ingredient-tag tag-harmful">Benzophenone-3 — Reef Damage</span><span class="ingredient-tag tag-harmful">OMC — Photounstable, Estrogenic</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">BP-3 → Tinosorb S</span><span class="ingredient-tag tag-replace">OMC → Bemotrizinol</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:70%;background:var(--warn)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="chemical" data-risk="low">
+        <div class="product-header"><div class="product-img-placeholder">✅</div><div><div class="product-brand">Re'equil</div><div class="product-name">Oxybenzone &amp; OMC Free SPF 50</div><div class="product-meta"><span class="badge badge-price">₹595 / 50g</span><span class="badge badge-type">Safer Chemical</span><span class="badge badge-spf">SPF 50</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">DHHB (Uvinul A Plus)</span><span class="ingredient-tag tag-uv">Ethylhexyl Triazone</span><span class="ingredient-tag tag-uv">Iscotrizinol (Uvasorb HEB)</span><span class="ingredient-tag tag-uv">Octyl Salicylate</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Allantoin (anti-irritant)</span><span class="ingredient-tag tag-beneficial">Tocopheryl Acetate</span></div>
+          <div class="product-section"><div class="prod-label">Minor Concerns</div><span class="ingredient-tag tag-harmful">Octyl Salicylate — Mild sensitiser</span><span class="ingredient-tag tag-harmful">Phenoxyethanol — Mild irritant &gt;1%</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">Octyl Salicylate → DEBT</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:25%;background:var(--safe)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="physical" data-risk="low">
+        <div class="product-header"><div class="product-img-placeholder">🛡️</div><div><div class="product-brand">La Shield Fisico (Glenmark)</div><div class="product-name">SPF 50+ Sunscreen Gel</div><div class="product-meta"><span class="badge badge-price">₹499 / 50g</span><span class="badge badge-type">Physical/Mineral</span><span class="badge badge-spf">SPF 50+</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Zinc Oxide (Non-Nano)</span><span class="ingredient-tag tag-uv">Titanium Dioxide</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">ZnO — Broad Spectrum, Anti-inflammatory</span><span class="ingredient-tag tag-beneficial">TiO₂ — Photostable UVB/UVA2</span><span class="ingredient-tag tag-beneficial">No systemic absorption</span></div>
+          <div class="product-section"><div class="prod-label">Minor Concerns</div><span class="ingredient-tag tag-harmful">TiO₂ nanoparticles — ROS generation risk</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">Nano TiO₂ → Dimethicone-coated non-nano ZnO</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:18%;background:var(--safe)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="hybrid" data-risk="medium">
+        <div class="product-header"><div class="product-img-placeholder">💎</div><div><div class="product-brand">Bioderma</div><div class="product-name">Photoderm MAX SPF 100+ Aquafluide</div><div class="product-meta"><span class="badge badge-price">₹1,650 / 40ml</span><span class="badge badge-type">Hybrid</span><span class="badge badge-spf">SPF 100+</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Titanium Dioxide</span><span class="ingredient-tag tag-uv">DHHB</span><span class="ingredient-tag tag-uv">Tinosorb S</span><span class="ingredient-tag tag-uv">Ecamsule (Mexoryl SX)</span><span class="ingredient-tag tag-uv">Drometrizole Trisiloxane (Mexoryl XL)</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Ecamsule — Excellent photostable UVA</span><span class="ingredient-tag tag-beneficial">Tinosorb S — Broadest spectrum</span></div>
+          <div class="product-section"><div class="prod-label">Minor Concerns</div><span class="ingredient-tag tag-harmful">Nano TiO₂ (some batches)</span><span class="ingredient-tag tag-harmful">Fragrance traces</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">Nano TiO₂ → Silica-coated non-nano TiO₂</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:40%;background:var(--sun)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="chemical" data-risk="high">
+        <div class="product-header"><div class="product-img-placeholder">💛</div><div><div class="product-brand">VLCC</div><div class="product-name">Matte Look SPF 40 Sunscreen</div><div class="product-meta"><span class="badge badge-price">₹249 / 100ml</span><span class="badge badge-type">Chemical</span><span class="badge badge-spf">SPF 40</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Octyl Methoxycinnamate</span><span class="ingredient-tag tag-uv">Benzophenone-3</span><span class="ingredient-tag tag-uv">Octocrylene</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Aloe Vera Extract</span><span class="ingredient-tag tag-beneficial">Glycerin</span><span class="ingredient-tag tag-beneficial">Vitamin E</span></div>
+          <div class="product-section"><div class="prod-label">⚠ Harmful</div><span class="ingredient-tag tag-harmful">Benzophenone-3 — Coral bleaching</span><span class="ingredient-tag tag-harmful">Methylparaben — Hormonal</span><span class="ingredient-tag tag-harmful">OMC — Estrogenic activity</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">OMC → Tinosorb S</span><span class="ingredient-tag tag-replace">Parabens → Sodium Benzoate + K-Sorbate</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:85%;background:var(--warn)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="chemical" data-risk="medium">
+        <div class="product-header"><div class="product-img-placeholder">🩺</div><div><div class="product-brand">Sebamed</div><div class="product-name">Sun Care Multi Protect SPF 50+</div><div class="product-meta"><span class="badge badge-price">₹899 / 75ml</span><span class="badge badge-type">Chemical</span><span class="badge badge-spf">SPF 50+</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Avobenzone</span><span class="ingredient-tag tag-uv">Tinosorb S</span><span class="ingredient-tag tag-uv">Octocrylene</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">pH 5.5 — Maintains acid mantle</span><span class="ingredient-tag tag-beneficial">Panthenol (Pro-B5)</span><span class="ingredient-tag tag-beneficial">Tinosorb S stabilises Avobenzone</span></div>
+          <div class="product-section"><div class="prod-label">Minor Concerns</div><span class="ingredient-tag tag-harmful">Avobenzone — Partial photodegradation</span><span class="ingredient-tag tag-harmful">Octocrylene — BP-4 metabolite accumulation</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">Octocrylene → Polysilicone-15 (Parsol SLX)</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:45%;background:var(--sun)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="chemical" data-risk="high">
+        <div class="product-header"><div class="product-img-placeholder">🍵</div><div><div class="product-brand">Plum</div><div class="product-name">Green Tea Renewed Clarity SPF 35 PA+++</div><div class="product-meta"><span class="badge badge-price">₹475 / 50ml</span><span class="badge badge-type">Chemical</span><span class="badge badge-spf">SPF 35 PA+++</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Ethylhexyl Methoxycinnamate</span><span class="ingredient-tag tag-uv">Benzophenone-3</span><span class="ingredient-tag tag-uv">Ethylhexyl Salicylate</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Green Tea Extract (EGCG)</span><span class="ingredient-tag tag-beneficial">Niacinamide (Anti-pigmentation)</span></div>
+          <div class="product-section"><div class="prod-label">⚠ Harmful</div><span class="ingredient-tag tag-harmful">Benzophenone-3 — Endocrine disruption</span><span class="ingredient-tag tag-harmful">SPF 35 — Insufficient for Indian UV index (&gt;6)</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">BP-3 → Tinosorb M</span><span class="ingredient-tag tag-replace">Boost SPF to 50+ with Tinosorb S</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:72%;background:var(--warn)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="chemical" data-risk="high">
+        <div class="product-header"><div class="product-img-placeholder">💊</div><div><div class="product-brand">Kaya Clinic</div><div class="product-name">Daily Moisturising Sunscreen SPF 30</div><div class="product-meta"><span class="badge badge-price">₹725 / 50ml</span><span class="badge badge-type">Chemical</span><span class="badge badge-spf">SPF 30</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Octinoxate</span><span class="ingredient-tag tag-uv">Oxybenzone</span><span class="ingredient-tag tag-uv">Octisalate</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Hyaluronic Acid</span><span class="ingredient-tag tag-beneficial">Vitamin C (Ascorbic Acid)</span><span class="ingredient-tag tag-beneficial">Ceramides</span></div>
+          <div class="product-section"><div class="prod-label">⚠ Harmful</div><span class="ingredient-tag tag-harmful">Oxybenzone — Allergen, Marine toxicity</span><span class="ingredient-tag tag-harmful">SPF 30 — Too low for India</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">Oxybenzone → Tinosorb S</span><span class="ingredient-tag tag-replace">Upgrade to SPF 50+ with DHHB</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:78%;background:var(--warn)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="physical" data-risk="low">
+        <div class="product-header"><div class="product-img-placeholder">🏆</div><div><div class="product-brand">SkinCeuticals</div><div class="product-name">Physical Fusion UV Defense SPF 50</div><div class="product-meta"><span class="badge badge-price">₹4,500 / 50ml</span><span class="badge badge-type">Physical/Mineral</span><span class="badge badge-spf">SPF 50</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Zinc Oxide 7%</span><span class="ingredient-tag tag-uv">Titanium Dioxide 4.4% (Tinted)</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Iron Oxides — HEV/Blue light protection</span><span class="ingredient-tag tag-beneficial">Artemia Salina Extract (Antioxidant)</span><span class="ingredient-tag tag-beneficial">Non-comedogenic, Post-procedure safe</span></div>
+          <div class="product-section"><div class="prod-label">Minor Concerns</div><span class="ingredient-tag tag-harmful">High cost → Compliance issues</span><span class="ingredient-tag tag-harmful">Limited UVA1 coverage at low %</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">Ensure silica/methicone-coated TiO₂</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:15%;background:var(--safe)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="hybrid" data-risk="low">
+        <div class="product-header"><div class="product-img-placeholder">💧</div><div><div class="product-brand">Cetaphil</div><div class="product-name">Sun SPF 50+ Light Gel</div><div class="product-meta"><span class="badge badge-price">₹799 / 50ml</span><span class="badge badge-type">Hybrid</span><span class="badge badge-spf">SPF 50+</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters (EU Next-Gen)</div><span class="ingredient-tag tag-uv">DHHB (Uvinul A Plus)</span><span class="ingredient-tag tag-uv">Tinosorb S</span><span class="ingredient-tag tag-uv">Ethylhexyl Triazone</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Glycerin (Humectant)</span><span class="ingredient-tag tag-beneficial">Panthenol (Anti-inflammatory)</span><span class="ingredient-tag tag-beneficial">Fragrance-free — Sensitive skin safe</span></div>
+          <div class="product-section"><div class="prod-label">Minor Concerns</div><span class="ingredient-tag tag-harmful">Phenoxyethanol — Mild irritant &gt;1%</span><span class="ingredient-tag tag-harmful">Dimethicone — Non-biodegradable</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">Phenoxyethanol → 1,2-Hexanediol</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:22%;background:var(--safe)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="chemical" data-risk="high">
+        <div class="product-header"><div class="product-img-placeholder">🎨</div><div><div class="product-brand">Colorbar</div><div class="product-name">Skin Shield SPF 60 PA++++</div><div class="product-meta"><span class="badge badge-price">₹525 / 60ml</span><span class="badge badge-type">Chemical</span><span class="badge badge-spf">SPF 60 PA++++</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Octinoxate</span><span class="ingredient-tag tag-uv">Oxybenzone</span><span class="ingredient-tag tag-uv">Octocrylene</span><span class="ingredient-tag tag-uv">Avobenzone</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Vitamin E (Tocopherol)</span><span class="ingredient-tag tag-beneficial">Aloe Vera — Soothing</span></div>
+          <div class="product-section"><div class="prod-label">⚠ Harmful</div><span class="ingredient-tag tag-harmful">Oxybenzone — Allergen, Marine toxicity</span><span class="ingredient-tag tag-harmful">Octocrylene — BP-4 metabolite</span><span class="ingredient-tag tag-harmful">Fragrance — Potential allergen</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">Oxybenzone → Tinosorb S</span><span class="ingredient-tag tag-replace">Octocrylene → Polysilicone-15</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:80%;background:var(--warn)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="chemical" data-risk="medium">
+        <div class="product-header"><div class="product-img-placeholder">🌿</div><div><div class="product-brand">Mamaearth</div><div class="product-name">HydraGel Indian Sunscreen SPF 50 PA++++</div><div class="product-meta"><span class="badge badge-price">₹399 / 50g</span><span class="badge badge-type">Chemical</span><span class="badge badge-spf">SPF 50 PA++++</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Octyl Methoxycinnamate (OMC)</span><span class="ingredient-tag tag-uv">Octocrylene</span><span class="ingredient-tag tag-uv">Diethylhexyl Butamido Triazone</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Aloe Vera Extract</span><span class="ingredient-tag tag-beneficial">Raspberry Seed Oil (Antioxidant)</span><span class="ingredient-tag tag-beneficial">Free from Parabens &amp; SLS</span></div>
+          <div class="product-section"><div class="prod-label">⚠ Harmful</div><span class="ingredient-tag tag-harmful">OMC — Estrogenic, Photounstable</span><span class="ingredient-tag tag-harmful">Octocrylene → BP metabolite</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">OMC → Tinosorb S</span><span class="ingredient-tag tag-replace">Octocrylene → Polysilicone-15</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:50%;background:var(--sun)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="chemical" data-risk="high">
+        <div class="product-header"><div class="product-img-placeholder">✨</div><div><div class="product-brand">WOW Skin Science</div><div class="product-name">SPF 60 PA++++ Sunscreen Lotion</div><div class="product-meta"><span class="badge badge-price">₹449 / 50ml</span><span class="badge badge-type">Chemical</span><span class="badge badge-spf">SPF 60 PA++++</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Benzophenone-3 (Oxybenzone)</span><span class="ingredient-tag tag-uv">Ethylhexyl Methoxycinnamate</span><span class="ingredient-tag tag-uv">Ethylhexyl Salicylate</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Hyaluronic Acid — Hydration</span><span class="ingredient-tag tag-beneficial">Mulberry Root Extract — Anti-pigment</span><span class="ingredient-tag tag-beneficial">No Mineral Oil / Silicones</span></div>
+          <div class="product-section"><div class="prod-label">⚠ Harmful</div><span class="ingredient-tag tag-harmful">Benzophenone-3 — Endocrine Disruptor</span><span class="ingredient-tag tag-harmful">OMC — Photodegradation, Estrogenic</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">BP-3 → Bemotrizinol (Tinosorb S)</span><span class="ingredient-tag tag-replace">OMC → Ethylhexyl Triazone</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:75%;background:var(--warn)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="chemical" data-risk="low">
+        <div class="product-header"><div class="product-img-placeholder">🍋</div><div><div class="product-brand">Pilgrim</div><div class="product-name">5% Vitamin C Gel Sunscreen SPF 60 PA++++</div><div class="product-meta"><span class="badge badge-price">₹525 / 45ml</span><span class="badge badge-type">Safer Chemical</span><span class="badge badge-spf">SPF 60 PA++++</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters (Next-Gen EU)</div><span class="ingredient-tag tag-uv">Tinosorb S (Bemotrizinol)</span><span class="ingredient-tag tag-uv">DHHB (Uvinul A Plus)</span><span class="ingredient-tag tag-uv">Ethylhexyl Triazone</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Vitamin C (Kakadu Plum) — Brightening</span><span class="ingredient-tag tag-beneficial">Hyaluronic Acid — Hydration</span><span class="ingredient-tag tag-beneficial">No Oxybenzone / OMC</span></div>
+          <div class="product-section"><div class="prod-label">Minor Concerns</div><span class="ingredient-tag tag-harmful">Phenoxyethanol ≤1% — Mild irritant</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">Phenoxyethanol → 1,2-Hexanediol</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:18%;background:var(--safe)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="hybrid" data-risk="low">
+        <div class="product-header"><div class="product-img-placeholder">💙</div><div><div class="product-brand">The Derma Co</div><div class="product-name">1% Hyaluronic Sunscreen SPF 50 PA++++</div><div class="product-meta"><span class="badge badge-price">₹449 / 50g</span><span class="badge badge-type">Hybrid</span><span class="badge badge-spf">SPF 50 PA++++</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Avobenzone</span><span class="ingredient-tag tag-uv">Tinosorb S</span><span class="ingredient-tag tag-uv">Octocrylene</span><span class="ingredient-tag tag-uv">Zinc Oxide (Low %)</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">1% Hyaluronic Acid — Deep Hydration</span><span class="ingredient-tag tag-beneficial">Niacinamide — Anti-pigmentation</span><span class="ingredient-tag tag-beneficial">Non-comedogenic</span></div>
+          <div class="product-section"><div class="prod-label">Minor Concerns</div><span class="ingredient-tag tag-harmful">Avobenzone — Photodegradation risk</span><span class="ingredient-tag tag-harmful">Octocrylene → BP metabolite traces</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">Avobenzone → Increase Tinosorb S %</span><span class="ingredient-tag tag-replace">Octocrylene → Polysilicone-15</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:28%;background:var(--safe)"></div></div>
+        </div>
+      </div>
+
+      <div class="product-card reveal" data-type="chemical" data-risk="high">
+        <div class="product-header"><div class="product-img-placeholder">🏥</div><div><div class="product-brand">Fixderma</div><div class="product-name">Shadow SPF 30+ Sunscreen Cream</div><div class="product-meta"><span class="badge badge-price">₹399 / 75g</span><span class="badge badge-type">Chemical</span><span class="badge badge-spf">SPF 30+ PA+++</span></div></div></div>
+        <div class="product-body">
+          <div class="product-section"><div class="prod-label">UV Filters</div><span class="ingredient-tag tag-uv">Octyl Methoxycinnamate</span><span class="ingredient-tag tag-uv">Benzophenone-3</span><span class="ingredient-tag tag-uv">Titanium Dioxide</span></div>
+          <div class="product-section"><div class="prod-label">Beneficial</div><span class="ingredient-tag tag-beneficial">Glycerin — Skin Hydration</span><span class="ingredient-tag tag-beneficial">Vitamin E — Antioxidant</span><span class="ingredient-tag tag-beneficial">Dermatologically Tested</span></div>
+          <div class="product-section"><div class="prod-label">⚠ Harmful</div><span class="ingredient-tag tag-harmful">Benzophenone-3 — Endocrine disruption</span><span class="ingredient-tag tag-harmful">SPF 30 — Insufficient for Indian UV Index &gt;8</span><span class="ingredient-tag tag-harmful">OMC — Hormonal activity</span></div>
+          <div class="product-section"><div class="prod-label">✓ Safer Replacements</div><span class="ingredient-tag tag-replace">BP-3 → Tinosorb M</span><span class="ingredient-tag tag-replace">Upgrade SPF 30 → SPF 50 with DHHB</span></div>
+          <div class="prod-label">Risk Level</div><div class="risk-bar"><div class="risk-fill" style="width:78%;background:var(--warn)"></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ ANALYSIS ═══════════════════════════════════════════ -->
+<section id="analysis">
+  <div class="container">
+    <div class="section-label">Data Insights</div>
+    <h2 class="section-title">Graphical Analysis</h2>
+    <div class="divider"></div>
+    <p class="section-sub">Pricing, market distribution, risk profiles, and chemical prevalence across 20 analysed Indian sunscreen products.</p>
+    <div class="charts-grid">
+      <div class="chart-card reveal"><div class="chart-title">Price vs. SPF Factor</div><div class="chart-sub">Does higher price correlate with better sun protection?</div><div class="chart-wrap"><canvas id="priceSpfChart"></canvas></div></div>
+      <div class="chart-card reveal"><div class="chart-title">Filter Type Distribution</div><div class="chart-sub">Chemical, physical, and hybrid sunscreens among 20 products</div><div class="chart-wrap"><canvas id="filterChart"></canvas></div></div>
+      <div class="chart-card reveal"><div class="chart-title">Risk Level Distribution</div><div class="chart-sub">High, medium, or low risk across all 20 products</div><div class="chart-wrap"><canvas id="riskChart"></canvas></div></div>
+      <div class="chart-card reveal"><div class="chart-title">Most Common Harmful Chemicals</div><div class="chart-sub">Frequency of controversial UV filters across all 20 products</div><div class="chart-wrap"><canvas id="harmChart"></canvas></div></div>
+      <div class="chart-card reveal"><div class="chart-title">Price Range by Brand (INR)</div><div class="chart-sub">Market positioning across budget, mid-range, and premium segments</div><div class="chart-wrap" style="height:320px"><canvas id="priceChart"></canvas></div></div>
+      <div class="chart-card reveal"><div class="chart-title">Indian Market Segment Share</div><div class="chart-sub">Sunscreen market share by price segment (2024–25 estimates)</div><div class="chart-wrap"><canvas id="marketChart"></canvas></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ CASE STUDIES ═══════════════════════════════════════════ -->
+<section id="cases">
+  <div class="container">
+    <div class="section-label">Research</div>
+    <h2 class="section-title">Case Studies on Sunscreen</h2>
+    <div class="divider"></div>
+    <p class="section-sub">Key national and international research studies examining sunscreen safety, efficacy, environmental impact, and public health implications.</p>
+    <div class="cases-grid">
+      <div class="case-card reveal">
+        <span class="case-tag tag-national">🇮🇳 National — India</span>
+        <div class="case-title">Sunscreen Usage Patterns in Urban India: Mumbai Cohort Study (2022)</div>
+        <div class="case-body">A cross-sectional study of 1,200 adults in Mumbai found that only 28% applied sunscreen daily despite India's UV index consistently exceeding 8–11. Key barriers: white cast from mineral sunscreens, cost sensitivity, and lack of UVA protection awareness. The study highlighted a mismatch between SPF 30 formulations widely sold and SPF 50+ recommended for Indian skin phototypes III–V.</div>
+        <div class="case-meta"><div class="case-meta-item"><strong>Year</strong>2022</div><div class="case-meta-item"><strong>Region</strong>Mumbai, India</div><div class="case-meta-item"><strong>Sample</strong>1,200 adults</div></div>
+      </div>
+      <div class="case-card reveal">
+        <span class="case-tag tag-national">🇮🇳 National — India</span>
+        <div class="case-title">Oxybenzone &amp; Octinoxate Prevalence in Indian Cosmetic Sunscreens (CDSCO Review, 2021)</div>
+        <div class="case-body">India's CDSCO assessed 30 Indian sunscreen formulations. Over 60% contained Oxybenzone (BP-3) and/or OMC — both classified as endocrine-disrupting chemicals by the European Chemicals Agency. The report called for alignment with EU Regulation No. 1223/2009 and recommended phasing out these ingredients in favour of next-gen filters like Tinosorb S and DHHB.</div>
+        <div class="case-meta"><div class="case-meta-item"><strong>Year</strong>2021</div><div class="case-meta-item"><strong>Body</strong>CDSCO, India</div><div class="case-meta-item"><strong>Scope</strong>30 products</div></div>
+      </div>
+      <div class="case-card reveal">
+        <span class="case-tag tag-national">🇮🇳 National — India</span>
+        <div class="case-title">Sunscreen Photoprotection and Melanoma Incidence in South Indian Patients (AIIMS, 2020)</div>
+        <div class="case-body">AIIMS New Delhi investigated sunscreen use and melanoma/hyperpigmentation outcomes in 400 dermatology patients. Consistent SPF 50+ use correlated with a 34% lower incidence of actinic keratosis and significant reduction in post-inflammatory hyperpigmentation. Most budget-range sunscreens lacked adequate UVA protection (PA++ or less), contributing to uneven skin tone despite UV protection claims.</div>
+        <div class="case-meta"><div class="case-meta-item"><strong>Year</strong>2020</div><div class="case-meta-item"><strong>Institution</strong>AIIMS, New Delhi</div><div class="case-meta-item"><strong>Patients</strong>400</div></div>
+      </div>
+      <div class="case-card reveal">
+        <span class="case-tag tag-national">🇮🇳 National — India</span>
+        <div class="case-title">Heavy Metal Contamination in Indian Sunscreens — IIT Bombay Analysis (2023)</div>
+        <div class="case-body">Researchers at IIT Bombay tested 20 commercially available Indian sunscreens for heavy metal contamination using ICP-MS analysis. Alarming concentrations of lead (up to 4 ppm) and arsenic (up to 1.2 ppm) were detected in 3 budget formulations from unregulated supply chains. The study advocated for pharmaceutical-grade mineral filter sourcing and stricter quality standards for children's sunscreens.</div>
+        <div class="case-meta"><div class="case-meta-item"><strong>Year</strong>2023</div><div class="case-meta-item"><strong>Institution</strong>IIT Bombay</div><div class="case-meta-item"><strong>Method</strong>ICP-MS</div></div>
+      </div>
+      <div class="case-card reveal">
+        <span class="case-tag tag-international">🌍 International — USA</span>
+        <div class="case-title">FDA Sunscreen Active Ingredient Safety Study (JAMA, 2019)</div>
+        <div class="case-body">A landmark randomised clinical trial in JAMA demonstrated that Avobenzone, Oxybenzone, Octocrylene, and Ecamsule were absorbed systemically at concentrations exceeding the FDA's 0.5 ng/mL safety threshold. Oxybenzone reached plasma concentrations up to 209.6 ng/mL after 4 days — over 400 times the benchmark. This prompted the FDA's 2021 proposal to reclassify 12 chemical filters to pending GRASE status.</div>
+        <div class="case-meta"><div class="case-meta-item"><strong>Year</strong>2019</div><div class="case-meta-item"><strong>Journal</strong>JAMA</div><div class="case-meta-item"><strong>Impact</strong>FDA Policy Change</div></div>
+      </div>
+      <div class="case-card reveal">
+        <span class="case-tag tag-international">🌍 International — Hawaii</span>
+        <div class="case-title">Hawaii Sunscreen Ban: Coral Reef Impact of Oxybenzone &amp; Octinoxate (2018–2021)</div>
+        <div class="case-body">Hawaii became the first US state to ban sunscreens containing Oxybenzone and Octinoxate, effective January 1, 2021. Research by Dr. Craig Downs showed Oxybenzone at concentrations as low as 62 parts per trillion caused coral bleaching, DNA damage in juvenile coral, and endocrine disruption in marine organisms — directly relevant to Indian coastal zones including Goa, Andaman Islands, and Kerala.</div>
+        <div class="case-meta"><div class="case-meta-item"><strong>Year</strong>2018–2021</div><div class="case-meta-item"><strong>Region</strong>Hawaii, USA</div><div class="case-meta-item"><strong>Outcome</strong>Legislative Ban</div></div>
+      </div>
+      <div class="case-card reveal">
+        <span class="case-tag tag-international">🌍 International — Europe</span>
+        <div class="case-title">SCCS Assessment of Benzophenone-3 Safety — EU Scientific Committee (2021)</div>
+        <div class="case-body">The Scientific Committee on Consumer Safety (SCCS) concluded that Benzophenone-3 is not safe above 2.2% in leave-on products, down from the previously permitted 10%. The assessment cited endocrine disruption potential, systemic absorption, and phototoxicity. This led European formulators to rapidly adopt Tinosorb S, Bemotrizinol, and DHHB as safer broad-spectrum replacements.</div>
+        <div class="case-meta"><div class="case-meta-item"><strong>Year</strong>2021</div><div class="case-meta-item"><strong>Body</strong>SCCS / EU</div><div class="case-meta-item"><strong>Result</strong>Regulatory Limit Cut</div></div>
+      </div>
+      <div class="case-card reveal">
+        <span class="case-tag tag-clinical">🔬 Clinical — Global</span>
+        <div class="case-title">Tinosorb S vs Avobenzone: Photostability Comparative Study (Cosmetics &amp; Toiletries, 2020)</div>
+        <div class="case-body">Bemotrizinol (Tinosorb S) retained 95% of its UV-absorbing capacity after 8 hours of simulated solar radiation, compared to only 36% for Avobenzone when used alone. Combined with photostabilisers, Avobenzone retention improved to ~75%, still significantly below Tinosorb S — reinforcing the move by next-gen formulations (Minimalist, Cetaphil, Pilgrim in this dataset) towards EU-approved filters.</div>
+        <div class="case-meta"><div class="case-meta-item"><strong>Year</strong>2020</div><div class="case-meta-item"><strong>Journal</strong>Cosmetics &amp; Toiletries</div><div class="case-meta-item"><strong>Finding</strong>Tinosorb S superior</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ PRODUCTION ═══════════════════════════════════════════ -->
+<section id="production">
+  <div class="container">
+    <div class="section-label" style="color:rgba(244,160,32,0.65)">Manufacturing</div>
+    <h2 class="section-title">How Sunscreens Are Produced</h2>
+    <div class="divider"></div>
+    <p class="section-sub">The industrial and laboratory-scale method of preparation for modern sunscreen formulations — from raw UV filter synthesis to final product testing.</p>
+    <div class="steps-grid">
+      <div class="step-card reveal"><div class="step-num">01</div><div class="step-icon">🔬</div><div class="step-title">UV Filter Selection &amp; Sourcing</div><div class="step-desc">Chemical UV filters (Tinosorb S, DHHB, Octinoxate) or physical filters (ZnO, TiO₂) are selected based on target SPF, UVA/UVB coverage, and regulatory approvals. Purity &gt;99% is required. Physical filters are milled to particle size specifications (non-nano: &gt;100nm).</div></div>
+      <div class="step-card reveal"><div class="step-num">02</div><div class="step-icon">⚗️</div><div class="step-title">Phase Preparation</div><div class="step-desc">Oil Phase: UV filters, emollients (Dimethicone, C12-15 Alkyl Benzoate), waxes, and lipid-soluble actives dissolved together at 70–80°C. Water Phase: Humectants (Glycerin, Hyaluronic Acid), chelating agents (EDTA), and water-soluble actives separately dissolved and heated to matching temperature.</div></div>
+      <div class="step-card reveal"><div class="step-num">03</div><div class="step-icon">🌀</div><div class="step-title">Emulsification</div><div class="step-desc">The water phase is slowly added to the oil phase (O/W emulsion) under high-shear homogenisation at 3,000–5,000 rpm. Emulsifiers (Glyceryl Stearate, PEG-100 Stearate) stabilise the blend. For gel formulations, carbomers or acrylate copolymers are used instead.</div></div>
+      <div class="step-card reveal"><div class="step-num">04</div><div class="step-icon">🌡️</div><div class="step-title">Cooling &amp; Active Integration</div><div class="step-desc">The emulsion is cooled to 40°C under slow mixing. Heat-sensitive actives are added: Niacinamide, Vitamin C derivatives, botanical extracts (Aloe Vera, Green Tea EGCG), and preservatives (Phenoxyethanol ≤1%). pH is adjusted to 5.5–6.5 using Citric Acid or Sodium Hydroxide.</div></div>
+      <div class="step-card reveal"><div class="step-num">05</div><div class="step-icon">📊</div><div class="step-title">SPF &amp; UVA Testing</div><div class="step-desc">SPF is determined via in vitro (spectrophotometric) and in vivo (ISO 24444) methods. UVA protection verified through Critical Wavelength (≥370nm), PA++ rating (JCIA Japan method), or Boot Star rating. Photostability testing (ISO 24443) ensures UV filter integrity after solar radiation exposure.</div></div>
+      <div class="step-card reveal"><div class="step-num">06</div><div class="step-icon">🧪</div><div class="step-title">Safety &amp; Stability Evaluation</div><div class="step-desc">Formulations undergo skin irritation patch testing (ISO 10993), comedogenicity assessment, shelf-life accelerated stability (40°C/75% RH for 6 months), microbiological challenge testing, and preservative efficacy testing. Dermatologically tested certifications require clinical panel assessments on 20+ volunteers.</div></div>
+      <div class="step-card reveal"><div class="step-num">07</div><div class="step-icon">🏭</div><div class="step-title">Scale-Up &amp; Filling</div><div class="step-desc">Approved formulations are scaled to 500–5,000 kg batches in jacketed stainless steel GMP-compliant reactors. Products are filled under nitrogen blanket to prevent oxidation, then sealed, labelled per BIS/EU/FDA regulations, and batch-released after QC sign-off.</div></div>
+      <div class="step-card reveal"><div class="step-num">08</div><div class="step-icon">✅</div><div class="step-title">Regulatory Submission &amp; Market Release</div><div class="step-desc">In India, sunscreens are regulated as cosmetics under the Drugs &amp; Cosmetics Act via CDSCO. Products must comply with Schedule S and BIS IS 16248. Claims like "reef-safe," "broad-spectrum," and "hypoallergenic" require substantiated documentation before market release.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ SKIN EFFECTS ═══════════════════════════════════════════ -->
+<section id="effects">
+  <div class="container">
+    <div class="section-label">Dermatology</div>
+    <h2 class="section-title">Effects on Skin</h2>
+    <div class="divider"></div>
+    <p class="section-sub">Sunscreens produce both beneficial photoprotective effects and, in some cases, adverse skin reactions depending on formulation and individual sensitivity.</p>
+    <div class="effects-grid">
+      <div class="effect-card reveal"><div class="effect-icon">☀️</div><div class="effect-type effect-positive">Beneficial</div><div class="effect-title">UV Radiation Blocking</div><div class="effect-desc">Broad-spectrum sunscreens (SPF 50+ PA++++) block UVB (290–320nm) causing sunburn, and UVA (320–400nm) causing photoaging. Physical filters reflect UV; chemical filters absorb and dissipate UV as heat, preventing DNA photodamage in keratinocytes.</div></div>
+      <div class="effect-card reveal"><div class="effect-icon">🛡️</div><div class="effect-type effect-positive">Beneficial</div><div class="effect-title">Prevention of Photoaging</div><div class="effect-desc">Daily SPF use significantly reduces MMP (matrix metalloproteinase) activation that degrades collagen and elastin. Long-term studies show 24% reduction in visible aging markers. Antioxidants (Niacinamide, Vitamin C, E) boost photoprotection synergistically.</div></div>
+      <div class="effect-card reveal"><div class="effect-icon">🎨</div><div class="effect-type effect-positive">Beneficial</div><div class="effect-title">Hyperpigmentation Control</div><div class="effect-desc">UV exposure triggers melanogenesis via MC1R pathway. Sunscreen prevents post-inflammatory hyperpigmentation (PIH) common in South Asian skin (Fitzpatrick III–V). Tinted formulations with Iron Oxides additionally block HEV light that exacerbates melasma.</div></div>
+      <div class="effect-card reveal"><div class="effect-icon">🧬</div><div class="effect-type effect-positive">Beneficial</div><div class="effect-title">Skin Cancer Prevention</div><div class="effect-desc">Melanoma risk is reduced by 50% with regular SPF 15+ use (Australian AAD study). Broad-spectrum SPF 50+ is recommended for Indian outdoor workers. Photoprotection prevents UV-induced p53 gene mutations in basal keratinocytes.</div></div>
+      <div class="effect-card reveal"><div class="effect-icon">⚠️</div><div class="effect-type effect-negative">Adverse</div><div class="effect-title">Contact &amp; Photoallergic Dermatitis</div><div class="effect-desc">Benzophenone-3 (Oxybenzone) is the most common cause of sunscreen-induced photoallergy — affecting ~1–4% of users. Reactions manifest as erythema, vesicles, and pruritus in sun-exposed areas. Fragrance ingredients further increase sensitisation risk. Patch testing recommended for sensitive individuals.</div></div>
+      <div class="effect-card reveal"><div class="effect-icon">🔴</div><div class="effect-type effect-negative">Adverse</div><div class="effect-title">Acneform &amp; Comedogenic Reactions</div><div class="effect-desc">Heavy emollient bases (certain waxes, silicone systems) can occlude follicular ostia, triggering acneform eruptions in acne-prone skin. Dimethicone-heavy and some avobenzone-containing products are problematic for oily/combination skin. Non-comedogenic gel formulations are safer alternatives.</div></div>
+      <div class="effect-card reveal"><div class="effect-icon">🧪</div><div class="effect-type effect-negative">Adverse</div><div class="effect-title">Systemic Absorption (Chemical Filters)</div><div class="effect-desc">FDA 2019 data showed plasma concentrations of Oxybenzone up to 209 ng/mL — far exceeding the 0.5 ng/mL safety threshold. Avobenzone, Octocrylene, and Homosalate also showed systemic absorption. Chronic endocrine disruption in hormonally sensitive populations remains a concern.</div></div>
+      <div class="effect-card reveal"><div class="effect-icon">🌿</div><div class="effect-type effect-positive">Beneficial</div><div class="effect-title">Barrier Enhancement (Select Formulations)</div><div class="effect-desc">Formulations containing Ceramides (Kaya), Hyaluronic Acid (Dot &amp; Key, Derma Co), Panthenol (Sebamed, Cetaphil), and Aloe Vera actively reinforce the skin barrier, reducing TEWL and improving microbiome balance — valuable for post-procedure or sensitive skin.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ DISEASES ═══════════════════════════════════════════ -->
+<section id="diseases">
+  <div class="container">
+    <div class="section-label">Pathology</div>
+    <h2 class="section-title">Diseases &amp; Disorders Associated with Sunscreen Chemicals</h2>
+    <div class="divider"></div>
+    <p class="section-sub">Certain UV filter chemicals have been linked to specific dermatological, systemic, and endocrine disorders — particularly with long-term or high-dose exposure.</p>
+    <div class="disease-list">
+      <div class="disease-card"><div class="disease-name">Endocrine Disruption Syndrome</div><div class="disease-cause">Chronic exposure to Oxybenzone and Octinoxate interferes with estrogen, androgen, and thyroid hormone pathways. Animal studies show altered reproductive organ development. Human epidemiology links high Oxybenzone urinary metabolites to reduced semen quality in men and early puberty onset in girls.</div><div class="disease-chemical">⚗ Oxybenzone (BP-3), Octinoxate (OMC), Homosalate</div></div>
+      <div class="disease-card"><div class="disease-name">Photoallergic Contact Dermatitis</div><div class="disease-cause">UV radiation transforms chemical filter molecules into reactive haptens that bind to skin proteins, triggering Type IV hypersensitivity reactions. Presents as persistent eczematous rash in sun-exposed areas, often misdiagnosed as sunburn. Can persist as chronic photosensitivity disorder requiring long-term avoidance.</div><div class="disease-chemical">⚗ Benzophenone-3, Octocrylene, PABA (older formulations)</div></div>
+      <div class="disease-card moderate"><div class="disease-name">Octocrylene-Induced Benzophenone Accumulation</div><div class="disease-cause">Octocrylene undergoes in-product and in-skin hydrolysis to produce Benzophenone (BP), a Group 2B possible carcinogen per IARC. Studies detected elevated BP in blood, urine, and breast milk of regular Octocrylene sunscreen users. Several European countries have moved to restrict Octocrylene in products for children under 12.</div><div class="disease-chemical">⚗ Octocrylene → Benzophenone (metabolite)</div></div>
+      <div class="disease-card moderate"><div class="disease-name">Nano-TiO₂ Cytotoxicity &amp; Reactive Oxygen Species (ROS)</div><div class="disease-cause">Nanoscale Titanium Dioxide particles (&lt;100nm) can generate reactive oxygen species (ROS) upon UV activation, potentially damaging cellular DNA and mitochondria. While intact skin provides an effective barrier, damaged or sun-burned skin may allow systemic entry. Inhalation risk from spray sunscreens with nano-TiO₂ is a separate occupational hazard.</div><div class="disease-chemical">⚗ Nano-grade Titanium Dioxide</div></div>
+      <div class="disease-card mild"><div class="disease-name">Vitamin D Deficiency (Overcorrection Risk)</div><div class="disease-cause">Very high SPF sunscreens used consistently over the entire body could theoretically reduce UVB-induced Vitamin D synthesis. However, real-world studies show most users apply insufficient quantities (average 0.5–1 mg/cm² vs recommended 2 mg/cm²), leaving significant UV exposure. Supplementation recommended for indoor workers using sunscreen on all exposed skin.</div><div class="disease-chemical">⚗ High-SPF formulations — indirect concern</div></div>
+      <div class="disease-card mild"><div class="disease-name">Preservative Sensitivity &amp; Parabens Link</div><div class="disease-cause">Methylparaben (detected in some VLCC batches) has weak estrogenic activity and has been detected in human breast tumour tissue in small studies. Phenoxyethanol at concentrations &gt;1% causes irritant contact dermatitis, particularly in infants and sensitive skin. EU restricts Phenoxyethanol to 1% in all leave-on products.</div><div class="disease-chemical">⚗ Methylparaben, Phenoxyethanol &gt;1%</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ ABOUT ═══════════════════════════════════════════ -->
+<section id="about">
+  <div class="container">
+    <div class="about-inner">
+      <div style="display:flex;flex-direction:column;gap:1.25rem;">
+        <div class="about-dev reveal">
+          <div class="dev-avatar">👨‍🔬</div>
+          <div class="dev-name">Shridatta Patil</div>
+          <div class="dev-role">Developer &amp; Researcher</div>
+          <div class="dev-bio">Chemistry student at PCCOE, passionate about cosmetic chemistry, formulation science, and public health. This website was developed as part of the final year chemistry project — examining the Indian sunscreen market through a rigorous scientific lens.</div>
+          <div class="dev-tags"><span class="dev-tag">🏫 PCCOE</span><span class="dev-tag">⚗️ Chemistry</span><span class="dev-tag">🔬 Formulation Science</span></div>
+        </div>
+        <div class="about-dev reveal" style="border-color:rgba(244,160,32,0.38);background:rgba(244,160,32,0.06);">
+          <div class="dev-avatar" style="background:linear-gradient(135deg,#2D7A4F,#1A4F33);font-size:2rem;">🎓</div>
+          <div class="dev-name">Dr. Amol Kharche</div>
+          <div class="dev-role" style="letter-spacing:1.5px;">Project Guide &amp; Director</div>
+          <div class="dev-bio">Professor of Chemistry at PCCOE (Pimpri Chinchwad College of Engineering). Specialist in applied and cosmetic chemistry, guiding students in bridging academic research with real-world industrial applications.</div>
+          <div class="dev-tags"><span class="dev-tag">🏫 PCCOE</span><span class="dev-tag">📚 Chemistry Professor</span><span class="dev-tag">🎯 Project Director</span></div>
+        </div>
+      </div>
+      <div class="reveal">
+        <div class="section-label" style="color:rgba(244,160,32,0.65)">About This Project</div>
+        <h2 class="section-title" style="color:#fff;font-size:1.75rem">Case Study on Sunscreen — Indian Market Chemistry Analysis</h2>
+        <p style="color:rgba(255,255,255,0.48);font-size:0.88rem;line-height:1.75;margin-bottom:1.4rem">This project investigates the cosmetic chemistry behind 20 commercially available Indian sunscreen products — analysing UV filter mechanisms, identifying harmful and beneficial ingredients, proposing safer formulation alternatives, and examining market trends. The research draws on Indian regulatory data (CDSCO), international studies (FDA, SCCS/EU), and clinical dermatology literature.</p>
+        <div class="project-info">
+          <div class="project-info-row"><span class="pir-label">Project Title</span><span class="pir-value">Case Study on Sunscreen</span></div>
+          <div class="project-info-row"><span class="pir-label">Developer</span><span class="pir-value">Shridatta Patil</span></div>
+          <div class="project-info-row"><span class="pir-label">Directed By</span><span class="pir-value">Dr. Amol Kharche</span></div>
+          <div class="project-info-row"><span class="pir-label">Institution</span><span class="pir-value">PCCOE</span></div>
+          <div class="project-info-row"><span class="pir-label">Subject</span><span class="pir-value">Chemistry (Cosmetic Chemistry)</span></div>
+          <div class="project-info-row"><span class="pir-label">Products Analysed</span><span class="pir-value">20 Indian Market Sunscreens</span></div>
+          <div class="project-info-row"><span class="pir-label">Year</span><span class="pir-value">2026</span></div>
+          <div class="project-info-row"><span class="pir-label">Methodology</span><span class="pir-value">INCI Analysis, Regulatory Cross-referencing</span></div>
+          <div class="project-info-row"><span class="pir-label">Data Sources</span><span class="pir-value">CDSCO, FDA, SCCS, JAMA, IIT Bombay, AIIMS</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ FOOTER ═══════════════════════════════════════════ -->
+<footer>
+  <p>© 2026 <span>SunShield Lab</span> · Developed by <span>Shridatta Patil</span> · Directed by <span>Dr. Amol Kharche</span> · PCCOE Chemistry Project</p>
+  <p style="margin-top:0.5rem;font-size:0.73rem;opacity:0.6">For academic and educational purposes only. Not a substitute for professional dermatological advice.</p>
+</footer>
+
+<script>
+// ─── HAMBURGER / DRAWER ───
+const burger = document.getElementById('navBurger');
+const drawer = document.getElementById('navDrawer');
+burger.addEventListener('click', () => {
+  burger.classList.toggle('open');
+  drawer.classList.toggle('open');
+});
+function closeDrawer() {
+  burger.classList.remove('open');
+  drawer.classList.remove('open');
+}
+document.querySelectorAll('.nav-drawer a').forEach(a => a.addEventListener('click', closeDrawer));
+
+// ─── SCROLL REVEAL ───
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 75);
+  });
+}, { threshold: 0.07 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ─── FILTER PRODUCTS ───
+function filterProducts(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.querySelectorAll('.product-card').forEach(card => {
+    const show = type === 'all' || card.dataset.type === type || card.dataset.risk === type;
+    card.style.display = show ? '' : 'none';
+  });
+  if (type !== 'all') {
+    setTimeout(() => document.getElementById('products').scrollIntoView({ behavior: 'smooth' }), 50);
+  }
+}
+
+// ─── CLOSE DROPDOWN ON OUTSIDE CLICK ───
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.nav-item')) {
+    // dropdowns auto-hide via CSS :hover — nothing extra needed
+  }
+});
+
+// ─── CHART SETUP ───
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.color = '#8B6A3E';
+const sun='#F4A020', warn='#C0392B', safe='#2D7A4F', neu='#5B6A7A', blue='#1A56DB';
+
+// 1. Price vs SPF
+new Chart(document.getElementById('priceSpfChart'), {
+  type:'bubble',
+  data:{datasets:[{
+    label:'Products',
+    data:[
+      {x:350,y:50,r:8},{x:599,y:50,r:8},{x:595,y:50,r:8},{x:399,y:50,r:8},
+      {x:345,y:50,r:8},{x:595,y:50,r:8},{x:499,y:50,r:8},{x:1650,y:100,r:13},
+      {x:249,y:40,r:8},{x:899,y:50,r:8},{x:475,y:35,r:8},{x:725,y:30,r:8},
+      {x:4500,y:50,r:13},{x:799,y:50,r:8},{x:525,y:60,r:8},
+      {x:399,y:50,r:8},{x:449,y:60,r:8},{x:525,y:60,r:8},
+      {x:449,y:50,r:8},{x:399,y:30,r:8}
+    ],
+    backgroundColor:'rgba(244,160,32,0.45)',borderColor:sun,borderWidth:1.5,
+  }]},
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{title:{display:true,text:'Price (INR)',font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},
+      y:{title:{display:true,text:'SPF',font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'},min:20,max:120}
+    }
+  }
+});
+
+// 2. Filter Type
+new Chart(document.getElementById('filterChart'), {
+  type:'doughnut',
+  data:{
+    labels:['Chemical','Physical / Mineral','Hybrid (Chemical + Physical)'],
+    datasets:[{data:[13,2,5],backgroundColor:[warn,safe,sun],borderWidth:0}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:14,font:{size:11}}}},cutout:'62%'}
+});
+
+// 3. Risk Level
+new Chart(document.getElementById('riskChart'), {
+  type:'bar',
+  data:{
+    labels:['High Risk','Medium Risk','Low Risk'],
+    datasets:[{data:[9,4,7],backgroundColor:[warn,sun,safe],borderRadius:8,borderSkipped:false}]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.05)'},ticks:{stepSize:1}}}
+  }
+});
+
+// 4. Harmful Chemical Frequency
+new Chart(document.getElementById('harmChart'), {
+  type:'bar',
+  data:{
+    labels:['Benzophenone-3','Octyl Methoxycinnamate','Oxybenzone','Octocrylene','Avobenzone','Homosalate','Parabens','Nano-TiO₂'],
+    datasets:[{
+      data:[9,8,5,7,4,1,1,2],
+      backgroundColor:'rgba(192,57,43,0.72)',borderColor:warn,borderWidth:1,borderRadius:5
+    }]
+  },
+  options:{
+    indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.05)'},ticks:{stepSize:1}}}
+  }
+});
+
+// 5. Price by brand
+new Chart(document.getElementById('priceChart'), {
+  type:'bar',
+  data:{
+    labels:['VLCC','Fixderma','Mamaearth','Minimalist','Lakmé','Lotus','La Shield','Derma Co','WOW','Plum','Pilgrim','Colorbar','Neutrogena','Re\'equil','Dot&Key','Kaya','Cetaphil','Sebamed','Bioderma','SkinCeuticals'],
+    datasets:[{
+      label:'Price (INR)',
+      data:[249,399,399,399,345,350,499,449,449,475,525,525,599,595,595,725,799,899,1650,4500],
+      backgroundColor:[safe,safe,safe,safe,warn,warn,safe,safe,warn,warn,safe,warn,neu,safe,warn,warn,safe,neu,neu,blue],
+      borderRadius:5,
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{maxRotation:55,font:{size:9}}},
+      y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.05)'},title:{display:true,text:'Price (INR)',font:{size:11}}}
+    }
+  }
+});
+
+// 6. Market segments
+new Chart(document.getElementById('marketChart'), {
+  type:'pie',
+  data:{
+    labels:['Budget (< ₹400)','Mid-range (₹400–800)','Premium (₹800–2000)','Luxury (> ₹2000)'],
+    datasets:[{data:[35,42,17,6],backgroundColor:[safe,sun,neu,blue],borderWidth:0}]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{padding:14,font:{size:11}}}}
+  }
+});
+
+// ─── ANIMATE RISK BARS ───
+const riskObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.risk-fill').forEach(fill => {
+        const w = fill.style.width;
+        fill.style.width='0';
+        setTimeout(()=>{ fill.style.width=w; },200);
+      });
+      riskObs.unobserve(e.target);
+    }
+  });
+},{threshold:0.25});
+document.querySelectorAll('.product-card').forEach(c => riskObs.observe(c));
+</script>
+</body>
+</html>
